@@ -140,20 +140,6 @@ export function* endTurn(game: IGame): Generator<GameEvent> {
         step(player);
     }
 
-    // Rotate hands
-    const hands = new Array<Hand>(players.length);
-
-    for (let index = 0; index < players.length; index++) {
-        const player = game.players[index];
-        const hand = takeHand(player);
-        const newIndex = (index + 1) % players.length;
-        hands[newIndex] = hand;
-    }
-
-    for (let index = 0; index < hands.length; index++) {
-        giveHand(players[index], hands[index]);
-    }
-
     yield {
         kind: GameEventKind.TurnOver,
         data: { turn: game.currentTurn },
@@ -164,6 +150,20 @@ export function* endTurn(game: IGame): Generator<GameEvent> {
     if (game.currentTurn === game.numTurnsPerRound) {
         for (const event of endRound(game)) {
             yield event;
+        }
+    } else {
+        // Rotate hands
+        const hands = new Array<Hand>(players.length);
+
+        for (let index = 0; index < players.length; index++) {
+            const player = game.players[index];
+            const hand = takeHand(player);
+            const newIndex = (index + 1) % players.length;
+            hands[newIndex] = hand;
+        }
+
+        for (let index = 0; index < hands.length; index++) {
+            giveHand(players[index], hands[index]);
         }
     }
 }
@@ -183,18 +183,6 @@ export function* endRound(game: IGame): Generator<GameEvent> {
         roundOver(player, score);
     }
 
-    // Deal new hands
-    const newHands = dealHands(
-        game.deck,
-        players.length,
-        game.numTurnsPerRound);
-
-    for (let index = 0; index < newHands.length; index++) {
-        giveHand(players[index], newHands[index]);
-    }
-
-    game.currentTurn = 0;
-
     yield {
         kind: GameEventKind.RoundOver,
         data: { round: game.currentRound },
@@ -205,6 +193,18 @@ export function* endRound(game: IGame): Generator<GameEvent> {
     if (game.currentRound === NUM_ROUNDS) {
         for (const event of endGame(game)) {
             yield event;
+        }
+    } else {
+        game.currentTurn = 0;
+
+        // Deal new hands
+        const newHands = dealHands(
+            game.deck,
+            players.length,
+            game.numTurnsPerRound);
+
+        for (let index = 0; index < newHands.length; index++) {
+            giveHand(players[index], newHands[index]);
         }
     }
 }
@@ -246,11 +246,11 @@ export function step(player: IPlayer) {
     doMoveFuc(player.faceUpCards, player.selectedMove);
     doMoveHand(player.hand, player.selectedMove);
     player.selectedMove = null;
+    player.numPuddings = countPuddings(player.faceUpCards);
 }
 
 export function roundOver(player: IPlayer, score: number) {
     player.numPoints += score;
-    player.numPuddings += countPuddings(player.faceUpCards);
     player.faceUpCards = [];
     player.hand = [];
 }

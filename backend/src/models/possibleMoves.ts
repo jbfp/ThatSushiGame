@@ -39,30 +39,6 @@ export function calculatePossibleMoves(hand: Hand, faceUpCards: FaceUpCards): Po
                     }
                 }
             }
-        } else if (card.kind === CardKind.Wasabi) {
-            const wasabi = card;
-
-            for (const card of hand) {
-                if (card.kind === CardKind.Nigiri) {
-                    const nigiri = card;
-
-                    // If the player chooses a nigiri card, and already
-                    // has a wasabi card, then this nigiri must be placed
-                    // on top of the wasabi, i.e. the player cannot play
-                    // the nigiri on its own when there is a free wasabi
-                    const index = possibleMoves.findIndex(move =>
-                        move.kind === MoveKind.Card &&
-                        move.card === nigiri);
-
-                    possibleMoves.splice(index, 1);
-
-                    possibleMoves.push({
-                        kind: MoveKind.Wasabi,
-                        wasabi,
-                        nigiri
-                    });
-                }
-            }
         }
     }
 
@@ -77,15 +53,4 @@ function* combineCards(card0: Card, card1: Card): Generator<[Move, Move]> {
         kind: MoveKind.Card,
         card: card1,
     }];
-
-    if (card0.kind === CardKind.Wasabi && card1.kind == CardKind.Nigiri) {
-        yield [{
-            kind: MoveKind.Card,
-            card: card0,
-        }, {
-            kind: MoveKind.Wasabi,
-            wasabi: card0,
-            nigiri: card1
-        }];
-    }
 }

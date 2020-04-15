@@ -32,16 +32,42 @@ export function countPuddings(faceUpCards: FaceUpCards) {
 
 export function doMove(faceUpCards: FaceUpCards, move: Move) {
     if (move.kind === MoveKind.Card) {
-        // Simply add the card to the set of face-up cards
-        faceUpCards.push({
-            kind: FaceUpCardKind.Card,
-            card: move.card,
-        });
+        if (move.card.kind === CardKind.Nigiri) {
+            // Remove the wasabi
+            const index = faceUpCards.findIndex(fuc =>
+                fuc.kind === FaceUpCardKind.Card &&
+                fuc.card.kind === CardKind.Wasabi);
+
+            if (index === -1) {
+                // Player does not have wasabi, add Nigir as normal card
+                faceUpCards.push({
+                    kind: FaceUpCardKind.Card,
+                    card: move.card,
+                });
+            } else {
+                const removed = faceUpCards.splice(index, 1);
+                const wasabi = (removed[0] as CardFaceUpCard).card as Wasabi;
+
+                console.log(removed, wasabi);
+
+                // Combine the wasabi and the nigiri
+                faceUpCards.push({
+                    kind: FaceUpCardKind.Wasabi,
+                    nigiri: move.card,
+                    wasabi,
+                });
+            }
+        } else {
+            faceUpCards.push({
+                kind: FaceUpCardKind.Card,
+                card: move.card,
+            });
+        }
     } else if (move.kind === MoveKind.Chopsticks) {
         // Remove chopsticks
         const index = faceUpCards.findIndex(fuc =>
             fuc.kind === FaceUpCardKind.Card &&
-            fuc.card === move.chopsticks);
+            fuc.card.kind === CardKind.Chopsticks);
 
         faceUpCards.splice(index, 1);
 
@@ -50,20 +76,6 @@ export function doMove(faceUpCards: FaceUpCards, move: Move) {
 
         // Do move1 with result of move0
         doMove(faceUpCards, move.move1);
-    } else if (move.kind === MoveKind.Wasabi) {
-        // Remove the wasabi
-        const index = faceUpCards.findIndex(fuc =>
-            fuc.kind === FaceUpCardKind.Card &&
-            fuc.card === move.wasabi);
-
-        faceUpCards.splice(index, 1);
-
-        // Combine the wasabi and the nigiri
-        faceUpCards.push({
-            kind: FaceUpCardKind.Wasabi,
-            wasabi: move.wasabi,
-            nigiri: move.nigiri
-        });
     }
 }
 

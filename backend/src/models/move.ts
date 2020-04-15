@@ -1,4 +1,4 @@
-import { Card, Chopsticks, Nigiri, Wasabi } from "./card";
+import { Card, Chopsticks } from "./card";
 
 export enum MoveKind {
     Card,
@@ -18,10 +18,4 @@ export interface ChopsticksMove {
     move1: Move;
 }
 
-export interface WasabiMove {
-    kind: MoveKind.Wasabi;
-    wasabi: Wasabi;
-    nigiri: Nigiri;
-}
-
-export type Move = CardMove | ChopsticksMove | WasabiMove;
+export type Move = CardMove | ChopsticksMove;
