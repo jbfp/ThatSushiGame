@@ -1,12 +1,12 @@
 export enum GameEventKind {
-    MoveSet,
+    CardsSelected,
     TurnOver,
     RoundOver,
     GameOver,
 }
 
-export interface MoveSetGameEvent {
-    kind: GameEventKind.MoveSet;
+export interface CardsSelectedGameEvent {
+    kind: GameEventKind.CardsSelected;
     data: {
         playerId: string;
     };
@@ -33,4 +33,4 @@ export interface GameOverGameEvent {
     };
 }
 
-export type GameEvent = MoveSetGameEvent | TurnOverGameEvent | RoundOverGameEvent | GameOverGameEvent;
+export type GameEvent = CardsSelectedGameEvent | TurnOverGameEvent | RoundOverGameEvent | GameOverGameEvent;

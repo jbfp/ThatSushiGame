@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { GameEvent, GameEventKind } from "../models/events";
-import { Game, setMove } from "../models/game";
+import { Game, selectCards } from "../models/game";
 
 export default function (sseClientsByGameId: ReadonlyMap<string, Response[]>) {
     return async function (req: Request, res: Response) {
         const userId = res.locals.userId;
         const gameId = req.params.gameId;
-        const move = req.body;
+        const cards = req.body;
         const game = await Game.findById(gameId);
 
         if (!game.players.some(p => p.id === userId)) {
@@ -18,17 +18,17 @@ export default function (sseClientsByGameId: ReadonlyMap<string, Response[]>) {
         let events: GameEvent[];
 
         try {
-            events = Array.from(setMove(game, userId, move));
+            events = Array.from(selectCards(game, userId, cards));
         } catch (err) {
-            res.status(400).send(err.message);
+            res.send({ error: err.message });
             return;
         }
 
         mongoose.set("debug", true);
         await game.save();
-        res.status(200).end();
+        res.send({});
 
-        // Send Server-Sent Events to all listeners
+        // Send events to all listeners over SSE
         const clients = sseClientsByGameId.get(gameId) || [];
 
         for (const event of events) {

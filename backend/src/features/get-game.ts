@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { Card } from "../models/card";
 import { FaceUpCards } from "../models/faceUpCards";
 import { Game } from "../models/game";
-import { Move } from "../models/move";
 import { PossibleMoves } from "../models/possibleMoves";
 
 export default async function (req: Request, res: Response) {
@@ -29,7 +28,7 @@ export default async function (req: Request, res: Response) {
             numPoints: player.numPoints,
             numPuddings: player.numPuddings,
             possibleMoves: player.possibleMoves,
-            selectedMove: player.selectedMove,
+            selectedCards: player.selectedCards,
         },
         opponents: opponents.map(p => ({
             faceUpCards: p.faceUpCards,
@@ -37,7 +36,7 @@ export default async function (req: Request, res: Response) {
             numCards: p.hand.length,
             numPoints: p.numPoints,
             numPuddings: p.numPuddings,
-            ready: p.selectedMove !== null,
+            ready: p.selectedCards.length > 0,
         })),
         winner: game.winner,
     };
@@ -61,7 +60,7 @@ export interface PlayerView {
     numPoints: number;
     numPuddings: number;
     possibleMoves: PossibleMoves;
-    selectedMove: Move | null;
+    selectedCards: Card[];
 }
 
 export interface OpponentView {

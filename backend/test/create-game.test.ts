@@ -60,7 +60,7 @@ describe("POST /api/games", () => {
 
     describe("Too few players", () => {
         const userId = "player 0";
-        const opponents = ["player 1"];
+        const opponents: string[] = [];
 
         let res: Response;
 

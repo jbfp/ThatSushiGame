@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import request, { Response } from "supertest";
 import app, { connectMongoose } from "../src/app";
+import { GameView } from "../src/features/get-game";
 import { createValidGame } from "./helpers";
 
 describe("GET /api/games", () => {
@@ -32,7 +33,9 @@ describe("GET /api/games", () => {
             });
 
             it("should contain game", () => {
-                expect(res.body).toContainEqual({ _id: gameId });
+                const games: GameView[] = res.body;
+                const containsGame = games.some(g => g.id === gameId);
+                expect(containsGame).toBeTruthy();
             });
         });
     });

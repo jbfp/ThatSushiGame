@@ -1,11 +1,11 @@
+import { Card, CardKind } from "../src/models/card";
 import { GameEvent, GameEventKind } from "../src/models/events";
-import { createGame, IGame, IPlayer, setMove } from "../src/models/game";
-import { Move } from "../src/models/move";
+import { createGame, IGame, IPlayer, selectCards } from "../src/models/game";
 
 describe("createGame", () => {
     describe("too few players", () => {
         it("should return error 0", () => {
-            const playerIds = ["player 0"];
+            const playerIds: string[] = [];
 
             const actual = createGame(playerIds);
 
@@ -13,7 +13,7 @@ describe("createGame", () => {
         });
 
         it("should return error 1", () => {
-            const playerIds = ["player 0", "player 1"];
+            const playerIds = ["player 0"];
 
             const actual = createGame(playerIds);
 
@@ -50,16 +50,16 @@ describe("createGame", () => {
     });
 });
 
-describe("setMove", () => {
+describe("selectCards", () => {
     const playerIds = ["a", "b", "c"];
     let game: IGame;
     let player: IPlayer;
-    let sut: (playerId: string, move: Move | null) => GameEvent[];
+    let sut: (playerId: string, card: Card[]) => GameEvent[];
 
     beforeEach(() => {
         game = createGame(playerIds) as IGame;
         player = game.players[0];
-        sut = (playerId, move) => Array.from(setMove(game, playerId, move));
+        sut = (playerId, cards) => Array.from(selectCards(game, playerId, cards));
     });
 
     describe("player not in game", () => {
@@ -68,45 +68,61 @@ describe("setMove", () => {
         });
     });
 
-    describe("player does not have move", () => {
+    describe("player selects N > 1 cards without chopsticks", () => {
+        it("should throw error", () => {
+            const cards: Card[] = [
+                { kind: CardKind.Wasabi },
+                { kind: CardKind.Dumpling },
+            ];
+
+            expect(() => sut(player.id, cards)).toThrowError("Player does not have chopsticks; only one card can be played without chopsticks");
+        });
+    });
+
+    describe("player does not have card", () => {
         it("should thow error", () => {
-            expect(() => sut(player.id, {} as Move)).toThrowError("Player does not have move");
+            const cards: Card[] = [
+                { kind: CardKind.Wasabi + 1 }
+            ];
+
+            expect(() => sut(player.id, cards)).toThrowError("Player does not have card");
         });
     });
 
-    describe("unset move", () => {
-        it("should set player's selected move to null", () => {
-            sut(player.id, null);
-            expect(player.selectedMove).toBeNull();
+    describe("deselect cards", () => {
+        it("should set player's selected move to []", () => {
+            sut(player.id, []);
+            expect(player.selectedCards).toHaveLength(0);
         });
     });
 
-    describe("set move", () => {
-        it("should set player's selected move", () => {
-            const move = player.possibleMoves[0];
-            sut(player.id, move);
-            expect(player.selectedMove).toEqual(move);
+    describe("select cards", () => {
+        it("should set player's selected cards", () => {
+            const cards = [player.hand[0]];
+            sut(player.id, cards);
+            const array = [...player.selectedCards]; // Convert CoreMongooseArray to Array
+            expect(array).toEqual(cards);
         });
     });
 
-    describe("final player to set move", () => {
+    describe("final player to select cards", () => {
         it("should end the turn", () => {
             // Set moves for all other players
             for (let index = 1; index < game.players.length; index++) {
                 const player = game.players[index];
                 const id = player.id;
-                const move = player.possibleMoves[0];
-                const events = sut(id, move);
-                expect(events).toContainEqual({ kind: GameEventKind.MoveSet, playerId: id });
+                const cards = [player.hand[0]];
+                const events = sut(id, cards);
+                expect(events).toContainEqual({ kind: GameEventKind.CardsSelected, data: { playerId: id } });
             }
 
             const id = player.id;
-            const move = player.possibleMoves[0];
-            const events = sut(id, move);
+            const cards = [player.hand[0]];
+            const events = sut(id, cards);
 
-            expect(events).toContainEqual({ kind: GameEventKind.MoveSet, playerId: player.id });
-            expect(events).toContainEqual({ kind: GameEventKind.TurnOver, turn: 0 });
-            expect(player.selectedMove).toBeNull();
+            expect(events).toContainEqual({ kind: GameEventKind.CardsSelected, data: { playerId: player.id } });
+            expect(events).toContainEqual({ kind: GameEventKind.TurnOver, data: { turn: 0 } });
+            expect(player.selectedCards).toHaveLength(0);
             expect(player.faceUpCards.length).toBe(1);
             expect(game.currentTurn).toBe(1);
         });

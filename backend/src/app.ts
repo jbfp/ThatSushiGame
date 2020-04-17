@@ -7,7 +7,7 @@ import path from "path";
 import createGame from "./features/create-game";
 import getGame from "./features/get-game";
 import getGames from "./features/get-games";
-import setMove from "./features/set-move";
+import selectCards from "./features/select-cards";
 import stream from "./features/stream";
 
 const sseClientsByGameId = new Map<string, Response[]>();
@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 app.post("/api/games", createGame);
 app.get("/api/games", getGames);
 app.get("/api/games/:gameId", getGame);
-app.post("/api/games/:gameId/move", setMove(sseClientsByGameId));
+app.post("/api/games/:gameId/cards", selectCards(sseClientsByGameId));
 
 export default app;
 

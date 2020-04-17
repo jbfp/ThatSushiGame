@@ -1,11 +1,10 @@
 import _ from "lodash";
 import mongoose, { Document } from "mongoose";
-import { Card } from "./card";
+import { Card, CardKind } from "./card";
 import { createShuffledDeck, dealHands } from "./deck";
 import { GameEvent, GameEventKind } from "./events";
-import { countPuddings, doMove as doMoveFuc, FaceUpCards } from "./faceUpCards";
-import { doMove as doMoveHand, Hand } from "./hand";
-import { Move } from "./move";
+import { countPuddings, FaceUpCardKind, FaceUpCards, playCards as playCardsFuc } from "./faceUpCards";
+import { Hand, playCards as playCardsHand } from "./hand";
 import { calculatePossibleMoves, PossibleMoves } from "./possibleMoves";
 import { scoreRound } from "./scoring";
 
@@ -18,7 +17,7 @@ export interface IPlayer {
     numPoints: number;
     numPuddings: number;
     possibleMoves: PossibleMoves;
-    selectedMove: Move | null;
+    selectedCards: Card[];
 }
 
 export interface IGame {
@@ -39,7 +38,7 @@ const PlayerSchema = new mongoose.Schema({
     numPoints: { type: Number, required: true },
     numPuddings: { type: Number, required: true },
     possibleMoves: { type: [Object], required: true },
-    selectedMove: { type: Object },
+    selectedCards: { type: [Object], required: true },
 }, { _id: false });
 
 const GameSchema = new mongoose.Schema({
@@ -87,7 +86,7 @@ export function createGame(playerIds: string[]): IGameDocument | Error {
             numPoints: 0,
             numPuddings: 0,
             possibleMoves,
-            selectedMove: null,
+            selectedCards: [],
         };
     });
 
@@ -103,29 +102,40 @@ export function createGame(playerIds: string[]): IGameDocument | Error {
     return new Game(game);
 }
 
-export function* setMove(game: IGame, playerId: string, move: Move | null): Generator<GameEvent> {
+export function* selectCards(game: IGame, playerId: string, cards: Card[]): Generator<GameEvent> {
     const player = game.players.find(p => p.id === playerId);
 
     if (!player) {
         throw new Error("Player is not in game");
     }
 
-    if (move !== null) {
-        const hasMove = player.possibleMoves.some(m => _.isEqual(move, m));
+    if (cards.length > 1) {
+        // Verify player has chopsticks
+        const hasChopsticks = player.faceUpCards.some(f =>
+            f.kind === FaceUpCardKind.Card &&
+            f.card.kind === CardKind.Chopsticks);
 
-        if (!hasMove) {
-            throw new Error("Player does not have move");
+        if (!hasChopsticks) {
+            throw new Error("Player does not have chopsticks; only one card can be played without chopsticks");
         }
     }
 
-    player.selectedMove = move;
+    for (const card of cards) {
+        const hasCard = player.hand.some(c => _.isEqual(c, card));
+
+        if (!hasCard) {
+            throw new Error("Player does not have card");
+        }
+    }
+
+    player.selectedCards = cards;
 
     yield {
-        kind: GameEventKind.MoveSet,
+        kind: GameEventKind.CardsSelected,
         data: { playerId },
     };
 
-    if (game.players.every(p => p.selectedMove !== null)) {
+    if (game.players.every(p => p.selectedCards.length > 0)) {
         for (const event of endTurn(game)) {
             yield event;
         }
@@ -243,9 +253,9 @@ export function giveHand(player: IPlayer, hand: Hand) {
 }
 
 export function step(player: IPlayer) {
-    doMoveFuc(player.faceUpCards, player.selectedMove);
-    doMoveHand(player.hand, player.selectedMove);
-    player.selectedMove = null;
+    playCardsFuc(player.faceUpCards, player.selectedCards);
+    playCardsHand(player.hand, player.selectedCards);
+    player.selectedCards = [];
     player.numPuddings = countPuddings(player.faceUpCards);
 }
 

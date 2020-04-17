@@ -1,16 +1,18 @@
 import _ from "lodash";
-import { Card } from "./card";
-import { Move, MoveKind } from "./move";
+import { Card, CardKind } from "./card";
 
 export type Hand = Card[];
 
-export function doMove(hand: Hand, move: Move) {
-    if (move.kind === MoveKind.Card) {
-        const index = hand.findIndex(c => _.isEqual(c, move.card));
+export function playCards(hand: Hand, cards: Card[]) {
+    if (cards.length > 1) {
+        hand.push({ kind: CardKind.Chopsticks });
+
+        for (const card of cards) {
+            playCards(hand, [card]);
+        }
+    } else if (cards.length === 1) {
+        const card = cards[0];
+        const index = hand.findIndex(c => _.isEqual(c, card));
         hand.splice(index, 1);
-    } else if (move.kind === MoveKind.Chopsticks) {
-        hand.push(move.chopsticks);
-        doMove(hand, move.move0);
-        doMove(hand, move.move1);
     }
 }

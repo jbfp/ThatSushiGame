@@ -1,5 +1,4 @@
 import { Card, CardKind, Nigiri, Pudding, Wasabi } from "./card";
-import { Move, MoveKind } from "./move";
 import * as Scoring from "./scoring";
 
 export enum FaceUpCardKind {
@@ -30,9 +29,22 @@ export function countPuddings(faceUpCards: FaceUpCards) {
         .length;
 }
 
-export function doMove(faceUpCards: FaceUpCards, move: Move) {
-    if (move.kind === MoveKind.Card) {
-        if (move.card.kind === CardKind.Nigiri) {
+export function playCards(faceUpCards: FaceUpCards, cards: Card[]) {
+    if (cards.length > 1) {
+        // Remove chopsticks
+        const index = faceUpCards.findIndex(fuc =>
+            fuc.kind === FaceUpCardKind.Card &&
+            fuc.card.kind === CardKind.Chopsticks);
+
+        faceUpCards.splice(index, 1);
+
+        for (const card of cards) {
+            playCards(faceUpCards, [card]);
+        }
+    } else if (cards.length === 1) {
+        const card = cards[0];
+
+        if (card.kind === CardKind.Nigiri) {
             // Remove the wasabi
             const index = faceUpCards.findIndex(fuc =>
                 fuc.kind === FaceUpCardKind.Card &&
@@ -42,40 +54,25 @@ export function doMove(faceUpCards: FaceUpCards, move: Move) {
                 // Player does not have wasabi, add Nigir as normal card
                 faceUpCards.push({
                     kind: FaceUpCardKind.Card,
-                    card: move.card,
+                    card: card,
                 });
             } else {
                 const removed = faceUpCards.splice(index, 1);
                 const wasabi = (removed[0] as CardFaceUpCard).card as Wasabi;
 
-                console.log(removed, wasabi);
-
                 // Combine the wasabi and the nigiri
                 faceUpCards.push({
                     kind: FaceUpCardKind.Wasabi,
-                    nigiri: move.card,
+                    nigiri: card,
                     wasabi,
                 });
             }
         } else {
             faceUpCards.push({
                 kind: FaceUpCardKind.Card,
-                card: move.card,
+                card: card,
             });
         }
-    } else if (move.kind === MoveKind.Chopsticks) {
-        // Remove chopsticks
-        const index = faceUpCards.findIndex(fuc =>
-            fuc.kind === FaceUpCardKind.Card &&
-            fuc.card.kind === CardKind.Chopsticks);
-
-        faceUpCards.splice(index, 1);
-
-        // Do move0
-        doMove(faceUpCards, move.move0);
-
-        // Do move1 with result of move0
-        doMove(faceUpCards, move.move1);
     }
 }
 
