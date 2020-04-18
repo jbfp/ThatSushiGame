@@ -1,4 +1,4 @@
-import { GameEvent, GameEventKind } from "../src/models/events";
+import { GameEvent } from "../src/models/events";
 import { createGame, IGame, IPlayer, selectCards } from "../src/models/game";
 
 describe("createGame", () => {
@@ -100,27 +100,6 @@ describe("selectCards", () => {
             sut(player.id, cards);
             const array = [...player.selectedCards]; // Convert CoreMongooseArray to Array
             expect(array).toEqual(cards);
-        });
-    });
-
-    describe("final player to select cards", () => {
-        it("should end the turn", () => {
-            // Set moves for all other players
-            for (let index = 1; index < game.players.length; index++) {
-                const player = game.players[index];
-                const id = player.id;
-                const events = sut(id, [0]);
-                expect(events).toContainEqual({ kind: GameEventKind.CardsSelected, data: { playerId: id } });
-            }
-
-            const id = player.id;
-            const events = sut(id, [0]);
-
-            expect(events).toContainEqual({ kind: GameEventKind.CardsSelected, data: { playerId: player.id } });
-            expect(events).toContainEqual({ kind: GameEventKind.TurnOver, data: { turn: 0 } });
-            expect(player.selectedCards).toHaveLength(0);
-            expect(player.faceUpCards.length).toBe(1);
-            expect(game.currentTurn).toBe(1);
         });
     });
 });

@@ -1,8 +1,13 @@
 import { Request, Response } from "express";
 import { GameEvent, GameEventKind } from "../models/events";
-import { Game, selectCards } from "../models/game";
+import { endTurn, Game, readyToEndTurn, selectCards } from "../models/game";
 
-export default function (sseClientsByGameId: ReadonlyMap<string, Response[]>) {
+const COUNTDOWN_MS = 4_000;
+
+export default function (
+    sseClientsByGameId: ReadonlyMap<string, Response[]>,
+    countdownsByGameId: Map<string, NodeJS.Timeout>
+) {
     return async function (req: Request, res: Response) {
         const userId = res.locals.userId;
         const gameId = req.params.gameId;
@@ -14,10 +19,17 @@ export default function (sseClientsByGameId: ReadonlyMap<string, Response[]>) {
             return;
         }
 
-        let events: GameEvent[];
+        let events: GameEvent[] = [];
+
+        if (countdownsByGameId.has(gameId)) {
+            const timeout = countdownsByGameId.get(gameId);
+            countdownsByGameId.delete(gameId);
+            clearTimeout(timeout);
+            events = [...events, { kind: GameEventKind.CountdownAborted, data: {} }];
+        }
 
         try {
-            events = Array.from(selectCards(game, userId, cards));
+            events = [...events, ...Array.from(selectCards(game, userId, cards))];
         } catch (err) {
             res.send({ error: err.message });
             return;
@@ -26,20 +38,46 @@ export default function (sseClientsByGameId: ReadonlyMap<string, Response[]>) {
         await game.save();
         res.send({});
 
-        // Send events to all listeners over SSE
-        const clients = sseClientsByGameId.get(gameId) || [];
+        if (readyToEndTurn(game)) {
+            const timeout = setTimeout(async () => {
+                const game = await Game.findById(gameId);
+                const events = Array.from(endTurn(game));
+                await game.save();
+                broadcastEvents(sseClientsByGameId, gameId, events);
+            }, COUNTDOWN_MS);
 
-        for (const event of events) {
-            const str = [
-                `event: ${GameEventKind[event.kind]}`,
-                `data: ${JSON.stringify(event.data)}`,
-                "\n",
-            ].join("\n");
+            countdownsByGameId.set(gameId, timeout);
 
-            for (const client of clients) {
-                client.write(str);
-                client.flush();
-            }
+            events = [...events, {
+                kind: GameEventKind.CountdownStarted,
+                data: { seconds: COUNTDOWN_MS / 1000 }
+            }];
         }
+
+        broadcastEvents(sseClientsByGameId, gameId, events);
     };
+}
+
+/**
+ * Send events to all listeners over Server-Sent Events
+ */
+function broadcastEvents(
+    sseClientsByGameId: ReadonlyMap<string, Response[]>,
+    gameId: string,
+    events: GameEvent[]
+) {
+    const clients = sseClientsByGameId.get(gameId) || [];
+
+    for (const event of events) {
+        const str = [
+            `event: ${GameEventKind[event.kind]}`,
+            `data: ${JSON.stringify(event.data)}`,
+            "\n",
+        ].join("\n");
+
+        for (const client of clients) {
+            client.write(str);
+            client.flush();
+        }
+    }
 }

@@ -11,6 +11,7 @@ import selectCards from "./features/select-cards";
 import stream from "./features/stream";
 
 const sseClientsByGameId = new Map<string, Response[]>();
+const countdownsByGameId = new Map<string, NodeJS.Timeout>();
 const app = express();
 
 app.use(compression());
@@ -34,7 +35,7 @@ app.use((req, res, next) => {
 app.post("/api/games", createGame);
 app.get("/api/games", getGames);
 app.get("/api/games/:gameId", getGame);
-app.post("/api/games/:gameId/cards", selectCards(sseClientsByGameId));
+app.post("/api/games/:gameId/cards", selectCards(sseClientsByGameId, countdownsByGameId));
 
 export default app;
 

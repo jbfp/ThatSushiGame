@@ -1,5 +1,7 @@
 export enum GameEventKind {
     CardsSelected,
+    CountdownStarted,
+    CountdownAborted,
     TurnOver,
     RoundOver,
     GameOver,
@@ -10,6 +12,18 @@ export interface CardsSelectedGameEvent {
     data: {
         playerId: string;
     };
+}
+
+export interface CountdownStartedGameEvent {
+    kind: GameEventKind.CountdownStarted;
+    data: {
+        seconds: number;
+    };
+}
+
+export interface CountdownAbortedGameEvent {
+    kind: GameEventKind.CountdownAborted;
+    data: {};
 }
 
 export interface TurnOverGameEvent {
@@ -33,4 +47,10 @@ export interface GameOverGameEvent {
     };
 }
 
-export type GameEvent = CardsSelectedGameEvent | TurnOverGameEvent | RoundOverGameEvent | GameOverGameEvent;
+export type GameEvent
+    = CardsSelectedGameEvent
+    | CountdownStartedGameEvent
+    | CountdownAbortedGameEvent
+    | TurnOverGameEvent
+    | RoundOverGameEvent
+    | GameOverGameEvent;

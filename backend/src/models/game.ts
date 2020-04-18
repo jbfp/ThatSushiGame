@@ -137,15 +137,17 @@ export function* selectCards(game: IGame, playerId: string, cards: number[]): Ge
         kind: GameEventKind.CardsSelected,
         data: { playerId },
     };
+}
 
-    if (game.players.every(p => p.selectedCards.length > 0)) {
-        for (const event of endTurn(game)) {
-            yield event;
-        }
-    }
+export function readyToEndTurn(game: IGame): boolean {
+    return game.players.every(p => p.selectedCards.length > 0);
 }
 
 export function* endTurn(game: IGame): Generator<GameEvent> {
+    if (!readyToEndTurn(game)) {
+        throw new Error("Not all players are ready");
+    }
+
     const players = game.players;
 
     // Do moves
