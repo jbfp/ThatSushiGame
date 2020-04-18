@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 import { GameEvent, GameEventKind } from "../models/events";
 import { Game, selectCards } from "../models/game";
 
@@ -24,7 +23,6 @@ export default function (sseClientsByGameId: ReadonlyMap<string, Response[]>) {
             return;
         }
 
-        mongoose.set("debug", true);
         await game.save();
         res.send({});
 

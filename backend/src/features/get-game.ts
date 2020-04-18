@@ -60,7 +60,7 @@ export interface PlayerView {
     numPoints: number;
     numPuddings: number;
     possibleMoves: PossibleMoves;
-    selectedCards: Card[];
+    selectedCards: number[];
 }
 
 export interface OpponentView {

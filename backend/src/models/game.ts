@@ -1,4 +1,3 @@
-import _ from "lodash";
 import mongoose, { Document } from "mongoose";
 import { Card, CardKind } from "./card";
 import { createShuffledDeck, dealHands } from "./deck";
@@ -17,7 +16,7 @@ export interface IPlayer {
     numPoints: number;
     numPuddings: number;
     possibleMoves: PossibleMoves;
-    selectedCards: Card[];
+    selectedCards: number[];
 }
 
 export interface IGame {
@@ -38,7 +37,7 @@ const PlayerSchema = new mongoose.Schema({
     numPoints: { type: Number, required: true },
     numPuddings: { type: Number, required: true },
     possibleMoves: { type: [Object], required: true },
-    selectedCards: { type: [Object], required: true },
+    selectedCards: { type: [Number], required: true },
 }, { _id: false });
 
 const GameSchema = new mongoose.Schema({
@@ -102,11 +101,15 @@ export function createGame(playerIds: string[]): IGameDocument | Error {
     return new Game(game);
 }
 
-export function* selectCards(game: IGame, playerId: string, cards: Card[]): Generator<GameEvent> {
+export function* selectCards(game: IGame, playerId: string, cards: number[]): Generator<GameEvent> {
     const player = game.players.find(p => p.id === playerId);
 
     if (!player) {
         throw new Error("Player is not in game");
+    }
+
+    if (cards.length > 2) {
+        throw new Error("Too many cards selected");
     }
 
     if (cards.length > 1) {
@@ -121,7 +124,7 @@ export function* selectCards(game: IGame, playerId: string, cards: Card[]): Gene
     }
 
     for (const card of cards) {
-        const hasCard = player.hand.some(c => _.isEqual(c, card));
+        const hasCard = card < player.hand.length;
 
         if (!hasCard) {
             throw new Error("Player does not have card");
@@ -253,9 +256,10 @@ export function giveHand(player: IPlayer, hand: Hand) {
 }
 
 export function step(player: IPlayer) {
-    playCardsFuc(player.faceUpCards, player.selectedCards);
-    playCardsHand(player.hand, player.selectedCards);
+    const playedCards = playCardsHand(player.hand, player.selectedCards);
     player.selectedCards = [];
+
+    playCardsFuc(player.faceUpCards, playedCards);
     player.numPuddings = countPuddings(player.faceUpCards);
 }
 

@@ -1,4 +1,3 @@
-import { Card, CardKind } from "../src/models/card";
 import { GameEvent, GameEventKind } from "../src/models/events";
 import { createGame, IGame, IPlayer, selectCards } from "../src/models/game";
 
@@ -54,7 +53,7 @@ describe("selectCards", () => {
     const playerIds = ["a", "b", "c"];
     let game: IGame;
     let player: IPlayer;
-    let sut: (playerId: string, card: Card[]) => GameEvent[];
+    let sut: (playerId: string, card: number[]) => GameEvent[];
 
     beforeEach(() => {
         game = createGame(playerIds) as IGame;
@@ -70,22 +69,21 @@ describe("selectCards", () => {
 
     describe("player selects N > 1 cards without chopsticks", () => {
         it("should throw error", () => {
-            const cards: Card[] = [
-                { kind: CardKind.Wasabi },
-                { kind: CardKind.Dumpling },
-            ];
+            expect(() => sut(player.id, [4, 2]))
+                .toThrowError("Player does not have chopsticks; only one card can be played without chopsticks");
+        });
+    });
 
-            expect(() => sut(player.id, cards)).toThrowError("Player does not have chopsticks; only one card can be played without chopsticks");
+    describe("player selects N > 2 cards", () => {
+        it("should throw error", () => {
+            expect(() => sut(player.id, [0, 1, 2]))
+                .toThrowError("Too many cards selected");
         });
     });
 
     describe("player does not have card", () => {
         it("should thow error", () => {
-            const cards: Card[] = [
-                { kind: CardKind.Wasabi + 1 }
-            ];
-
-            expect(() => sut(player.id, cards)).toThrowError("Player does not have card");
+            expect(() => sut(player.id, [99])).toThrowError("Player does not have card");
         });
     });
 
@@ -98,7 +96,7 @@ describe("selectCards", () => {
 
     describe("select cards", () => {
         it("should set player's selected cards", () => {
-            const cards = [player.hand[0]];
+            const cards = [0];
             sut(player.id, cards);
             const array = [...player.selectedCards]; // Convert CoreMongooseArray to Array
             expect(array).toEqual(cards);
@@ -111,14 +109,12 @@ describe("selectCards", () => {
             for (let index = 1; index < game.players.length; index++) {
                 const player = game.players[index];
                 const id = player.id;
-                const cards = [player.hand[0]];
-                const events = sut(id, cards);
+                const events = sut(id, [0]);
                 expect(events).toContainEqual({ kind: GameEventKind.CardsSelected, data: { playerId: id } });
             }
 
             const id = player.id;
-            const cards = [player.hand[0]];
-            const events = sut(id, cards);
+            const events = sut(id, [0]);
 
             expect(events).toContainEqual({ kind: GameEventKind.CardsSelected, data: { playerId: player.id } });
             expect(events).toContainEqual({ kind: GameEventKind.TurnOver, data: { turn: 0 } });
