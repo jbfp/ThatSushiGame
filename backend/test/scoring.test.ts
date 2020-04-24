@@ -32,4 +32,24 @@ describe("Scoring", () => {
             expect(actual).toBe(expected);
         });
     });
+
+
+    describe("scoreTempuras", () => {
+        test("negative argument", () => {
+            expect(() => sut.scoreTempuras(-1))
+                .toThrowError("Negative number of tempuras");
+        });
+
+        const cases = [
+            [0, 0],
+            [1, 0],
+            [2, 5],
+            [3, 5],
+            [4, 10],
+        ];
+
+        test.each(cases)("%p tempuras = %p points", (n, expected) => {
+            expect(sut.scoreTempuras(n)).toBe(expected);
+        });
+    });
 });
