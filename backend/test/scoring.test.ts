@@ -73,4 +73,25 @@ describe("Scoring", () => {
             expect(sut.scoreSashimis(n)).toBe(expected);
         });
     });
+
+    describe("scoreDumplings", () => {
+        test("negative argument", () => {
+            expect(() => sut.scoreDumplings(-1))
+                .toThrowError("Negative number of dumplings");
+        });
+
+        const cases = [
+            [0, 0],
+            [1, 1],
+            [2, 3],
+            [3, 6],
+            [4, 10],
+            [5, 15],
+            [6, 15],
+        ];
+
+        test.each(cases)("%p dumplings = %p points", (n, expected) => {
+            expect(sut.scoreDumplings(n)).toBe(expected);
+        });
+    });
 });
