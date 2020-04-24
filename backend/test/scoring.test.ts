@@ -52,4 +52,25 @@ describe("Scoring", () => {
             expect(sut.scoreTempuras(n)).toBe(expected);
         });
     });
+
+    describe("scoreSashimis", () => {
+        test("negative argument", () => {
+            expect(() => sut.scoreSashimis(-1))
+                .toThrowError("Negative number of sashimis");
+        });
+
+        const cases = [
+            [0, 0],
+            [1, 0],
+            [2, 0],
+            [3, 10],
+            [4, 10],
+            [5, 10],
+            [6, 20],
+        ];
+
+        test.each(cases)("%p sashimis = %p points", (n, expected) => {
+            expect(sut.scoreSashimis(n)).toBe(expected);
+        });
+    });
 });
