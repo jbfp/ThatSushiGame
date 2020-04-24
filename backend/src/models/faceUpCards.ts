@@ -1,5 +1,4 @@
 import { Card, CardKind, Nigiri, Pudding, Wasabi } from "./card";
-import * as Scoring from "./scoring";
 
 export enum FaceUpCardKind {
     Card,
@@ -74,40 +73,4 @@ export function playCards(faceUpCards: FaceUpCards, cards: Card[]) {
             });
         }
     }
-}
-
-export function scoreFaceUpCards(
-    faceUpCards: FaceUpCards
-): [number, number] {
-    let nigiriPoints = 0;
-    let numDumplings = 0;
-    let numMakiRolls = 0;
-    let numTempuras = 0;
-    let numSashimis = 0;
-
-    for (const faceUpCard of faceUpCards) {
-        if (faceUpCard.kind === FaceUpCardKind.Card) {
-            const card = faceUpCard.card;
-
-            if (card.kind === CardKind.Dumpling) {
-                numDumplings++;
-            } else if (card.kind === CardKind.MakiRolls) {
-                numMakiRolls += card.makiRollsKind;
-            } else if (card.kind === CardKind.Nigiri) {
-                nigiriPoints += Scoring.scoreNigiri(card);
-            } else if (card.kind === CardKind.Tempura) {
-                numTempuras++;
-            } else if (card.kind === CardKind.Sashimi) {
-                numSashimis++;
-            }
-        } else if (faceUpCard.kind === FaceUpCardKind.Wasabi) {
-            nigiriPoints += Scoring.scoreWasabiFaceUpCard(faceUpCard);
-        }
-    }
-
-    const tempuraPoints = Scoring.scoreTempuras(numTempuras);
-    const sashimiPoints = Scoring.scoreSashimis(numSashimis);
-    const dumplingPoints = Scoring.scoreDumplings(numDumplings);
-    const totalPoints = nigiriPoints + tempuraPoints + sashimiPoints + dumplingPoints;
-    return [totalPoints, numMakiRolls];
 }

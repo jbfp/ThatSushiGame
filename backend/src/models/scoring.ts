@@ -1,5 +1,5 @@
-import { Nigiri } from "./card";
-import * as FUC from "./faceUpCards";
+import { Nigiri, CardKind } from "./card";
+import { FaceUpCards, FaceUpCardKind, WasabiFaceUpCard } from "./faceUpCards";
 
 /**
  * Scores a Nigiri card.
@@ -15,7 +15,7 @@ export function scoreNigiri(nigiri: Nigiri): number {
  * Scores a Nigiri card with Wasabi.
  * The score is 3 × the value of the Nigiri.
  */
-export function scoreWasabiFaceUpCard(wasabiFaceUpCard: FUC.WasabiFaceUpCard): number {
+export function scoreWasabiFaceUpCard(wasabiFaceUpCard: WasabiFaceUpCard): number {
     return 3 * scoreNigiri(wasabiFaceUpCard.nigiri);
 }
 
@@ -67,8 +67,48 @@ export function scoreDumplings(numDumplings: number): number {
     }
 }
 
+/**
+ * Scores a set of face-up cards.
+ * @returns A tuple consisting of the number of points and the number of Maki Rolls.
+ */
+export function scoreFaceUpCards(
+    faceUpCards: FaceUpCards
+): [number, number] {
+    let nigiriPoints = 0;
+    let numDumplings = 0;
+    let numMakiRolls = 0;
+    let numTempuras = 0;
+    let numSashimis = 0;
+
+    for (const faceUpCard of faceUpCards) {
+        if (faceUpCard.kind === FaceUpCardKind.Card) {
+            const card = faceUpCard.card;
+
+            if (card.kind === CardKind.Dumpling) {
+                numDumplings++;
+            } else if (card.kind === CardKind.MakiRolls) {
+                numMakiRolls += card.makiRollsKind;
+            } else if (card.kind === CardKind.Nigiri) {
+                nigiriPoints += scoreNigiri(card);
+            } else if (card.kind === CardKind.Tempura) {
+                numTempuras++;
+            } else if (card.kind === CardKind.Sashimi) {
+                numSashimis++;
+            }
+        } else if (faceUpCard.kind === FaceUpCardKind.Wasabi) {
+            nigiriPoints += scoreWasabiFaceUpCard(faceUpCard);
+        }
+    }
+
+    const tempuraPoints = scoreTempuras(numTempuras);
+    const sashimiPoints = scoreSashimis(numSashimis);
+    const dumplingPoints = scoreDumplings(numDumplings);
+    const totalPoints = nigiriPoints + tempuraPoints + sashimiPoints + dumplingPoints;
+    return [totalPoints, numMakiRolls];
+}
+
 export function scoreRound(
-    round: Record<string, FUC.FaceUpCards>
+    round: Record<string, FaceUpCards>
 ): Record<string, number> {
     const scoreByPlayerId: Record<string, number> = {};
     const numMakiRollsByPlayerId: Record<string, number> = {};
@@ -76,13 +116,11 @@ export function scoreRound(
     for (const playerId in round) {
         if (round.hasOwnProperty(playerId)) {
             const faceUpCards = round[playerId];
-            const [numPoints, numMakiRolls] = FUC.scoreFaceUpCards(faceUpCards);
+            const [numPoints, numMakiRolls] = scoreFaceUpCards(faceUpCards);
             scoreByPlayerId[playerId] = numPoints;
             numMakiRollsByPlayerId[playerId] = numMakiRolls;
         }
     }
-
-    
 
     return scoreByPlayerId;
 }
