@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { GameEvent, GameEventKind } from "../models/events";
-import { endTurn, Game, readyToEndTurn, selectCards } from "../models/game";
+import { Game, readyToEndTurn, selectCards } from "../models/game";
 
 const COUNTDOWN_MS = 4_000;
 
 export default function (
-    sseClientsByGameId: ReadonlyMap<string, Response[]>,
-    countdownsByGameId: Map<string, NodeJS.Timeout>
+    publish: (gameId: string, gameEvent: GameEvent) => void,
+    startCountdown: (gameId: string, ms: number) => void
 ) {
     return async function (req: Request, res: Response) {
         const userId = res.locals.userId;
@@ -19,14 +19,9 @@ export default function (
             return;
         }
 
-        let events: GameEvent[] = [];
+        publish(gameId, { kind: GameEventKind.CountdownAborted, data: {} });
 
-        if (countdownsByGameId.has(gameId)) {
-            const timeout = countdownsByGameId.get(gameId);
-            countdownsByGameId.delete(gameId);
-            clearTimeout(timeout);
-            events = [...events, { kind: GameEventKind.CountdownAborted, data: {} }];
-        }
+        let events: GameEvent[] = [];
 
         try {
             events = [...events, ...Array.from(selectCards(game, userId, cards))];
@@ -38,46 +33,12 @@ export default function (
         await game.save();
         res.send({});
 
+        for (const event of events) {
+            publish(gameId, event);
+        }
+
         if (readyToEndTurn(game)) {
-            const timeout = setTimeout(async () => {
-                const game = await Game.findById(gameId);
-                const events = Array.from(endTurn(game));
-                await game.save();
-                broadcastEvents(sseClientsByGameId, gameId, events);
-            }, COUNTDOWN_MS);
-
-            countdownsByGameId.set(gameId, timeout);
-
-            events = [...events, {
-                kind: GameEventKind.CountdownStarted,
-                data: { seconds: COUNTDOWN_MS / 1000 }
-            }];
+            startCountdown(gameId, COUNTDOWN_MS);
         }
-
-        broadcastEvents(sseClientsByGameId, gameId, events);
     };
-}
-
-/**
- * Send events to all listeners over Server-Sent Events
- */
-function broadcastEvents(
-    sseClientsByGameId: ReadonlyMap<string, Response[]>,
-    gameId: string,
-    events: GameEvent[]
-) {
-    const clients = sseClientsByGameId.get(gameId) || [];
-
-    for (const event of events) {
-        const str = [
-            `event: ${GameEventKind[event.kind]}`,
-            `data: ${JSON.stringify(event.data)}`,
-            "\n",
-        ].join("\n");
-
-        for (const client of clients) {
-            client.write(str);
-            client.flush();
-        }
-    }
 }

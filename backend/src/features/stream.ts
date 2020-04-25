@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 
-export default function (clientsByGameId: Map<string, Response[]>) {
+export default function (
+    subscribe: (gameId: string, res: Response) => void,
+    unsubscribe: (gameId: string, res: Response) => void
+) {
     return function (req: Request, res: Response) {
         const headers = {
             "Content-Type": "text/event-stream",
@@ -12,20 +15,10 @@ export default function (clientsByGameId: Map<string, Response[]>) {
 
         const gameId = req.params.gameId;
 
-        if (clientsByGameId.has(gameId)) {
-            clientsByGameId.get(gameId).push(res);
-        } else {
-            clientsByGameId.set(gameId, [res]);
-        }
+        subscribe(gameId, res);
 
         req.on("close", () => {
-            const clients = clientsByGameId.get(gameId) || [];
-            const index = clients.indexOf(res);
-            clients.splice(index, 1);
-
-            if (clients.length === 0) {
-                clientsByGameId.delete(gameId);
-            }
+            unsubscribe(gameId, res);
         });
     };
 }

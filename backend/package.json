@@ -27,6 +27,7 @@
     "@types/lodash": "^4.14.149",
     "@types/mongoose": "^5.7.8",
     "@types/node": "^13.11.0",
+    "@types/redis": "^2.8.18",
     "@types/shelljs": "^0.8.7",
     "@types/supertest": "^2.0.8",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
@@ -47,6 +48,7 @@
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
     "lodash": "^4.17.15",
-    "mongoose": "^5.9.7"
+    "mongoose": "^5.9.7",
+    "redis": "^3.0.2"
   }
 }

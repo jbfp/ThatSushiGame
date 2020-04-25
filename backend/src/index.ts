@@ -1,3 +1,5 @@
+import cluster from "cluster";
+import os from "os";
 import app, { connectMongoose } from "./app";
 
 async function main() {
@@ -8,7 +10,11 @@ async function main() {
         process.exit(-1);
     }
 
-    app.listen(process.env.PORT || 3000);
+    if (cluster.isMaster) {
+        os.cpus().forEach(cluster.fork);
+    } else {
+        app.listen(process.env.PORT || 3000);
+    }
 }
 
 main();
