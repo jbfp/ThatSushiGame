@@ -94,4 +94,194 @@ describe("Scoring", () => {
             expect(sut.scoreDumplings(n)).toBe(expected);
         });
     });
+
+    describe("scoreMakiRolls", () => {
+        describe("no ties", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 2,
+                "player 2": 1,
+                "player 3": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first place gets 6 points", () => {
+                expect(actual["player 1"]).toBe(6);
+            });
+
+            test("second place gets 3 points", () => {
+                expect(actual["player 2"]).toBe(3);
+            });
+
+            test("third place gets nothing", () => {
+                expect(actual["player 3"]).toBe(0);
+            });
+        });
+
+        describe("first place two-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 1,
+                "player 2": 1,
+                "player 3": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 3 points", () => {
+                expect(actual["player 1"]).toBe(3);
+                expect(actual["player 2"]).toBe(3);
+            });
+
+            test("second place gets nothing", () => {
+                expect(actual["player 3"]).toBe(0);
+            });
+        });
+
+        describe("first place three-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 1,
+                "player 2": 1,
+                "player 3": 1,
+                "player 4": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 2 points", () => {
+                expect(actual["player 1"]).toBe(2);
+                expect(actual["player 2"]).toBe(2);
+                expect(actual["player 3"]).toBe(2);
+            });
+
+            test("second place gets nothing", () => {
+                expect(actual["player 4"]).toBe(0);
+            });
+        });
+
+        describe("first place four-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 1,
+                "player 2": 1,
+                "player 3": 1,
+                "player 4": 1,
+                "player 5": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 1 points", () => {
+                expect(actual["player 1"]).toBe(1);
+                expect(actual["player 2"]).toBe(1);
+                expect(actual["player 3"]).toBe(1);
+                expect(actual["player 4"]).toBe(1);
+            });
+
+            test("second place gets nothing", () => {
+                expect(actual["player 5"]).toBe(0);
+            });
+        });
+
+        describe("first place five-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 1,
+                "player 2": 1,
+                "player 3": 1,
+                "player 4": 1,
+                "player 5": 1,
+                "player 6": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 1 points", () => {
+                expect(actual["player 1"]).toBe(1);
+                expect(actual["player 2"]).toBe(1);
+                expect(actual["player 3"]).toBe(1);
+                expect(actual["player 4"]).toBe(1);
+                expect(actual["player 5"]).toBe(1);
+            });
+
+            test("second place gets nothing", () => {
+                expect(actual["player 6"]).toBe(0);
+            });
+        });
+
+        describe("second place two-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 2,
+                "player 2": 1,
+                "player 3": 1,
+                "player 4": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 6 points", () => {
+                expect(actual["player 1"]).toBe(6);
+            });
+
+            test("second place gets 1 point", () => {
+                expect(actual["player 2"]).toBe(1);
+                expect(actual["player 3"]).toBe(1);
+            });
+
+            test("third place gets nothing", () => {
+                expect(actual["player 4"]).toBe(0);
+            });
+        });
+
+        describe("second place three-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 2,
+                "player 2": 1,
+                "player 3": 1,
+                "player 4": 1,
+                "player 5": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 6 points", () => {
+                expect(actual["player 1"]).toBe(6);
+            });
+
+            test("second place gets 1 point", () => {
+                expect(actual["player 2"]).toBe(1);
+                expect(actual["player 3"]).toBe(1);
+                expect(actual["player 4"]).toBe(1);
+            });
+
+            test("third place gets nothing", () => {
+                expect(actual["player 5"]).toBe(0);
+            });
+        });
+
+        describe("second place four-way tie", () => {
+            const makiRollsByPlayerId = {
+                "player 1": 2,
+                "player 2": 1,
+                "player 3": 1,
+                "player 4": 1,
+                "player 5": 1,
+                "player 6": 0,
+            };
+
+            const actual = sut.scoreMakiRolls(makiRollsByPlayerId);
+
+            test("first places get 6 points", () => {
+                expect(actual["player 1"]).toBe(6);
+            });
+
+            test("second place gets 0 point", () => {
+                expect(actual["player 2"]).toBe(0);
+                expect(actual["player 3"]).toBe(0);
+                expect(actual["player 4"]).toBe(0);
+                expect(actual["player 5"]).toBe(0);
+            });
+
+            test("third place gets nothing", () => {
+                expect(actual["player 6"]).toBe(0);
+            });
+        });
+    });
 });

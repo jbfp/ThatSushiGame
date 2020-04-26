@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { Nigiri, CardKind } from "./card";
 import { FaceUpCards, FaceUpCardKind, WasabiFaceUpCard } from "./faceUpCards";
 
@@ -68,6 +69,47 @@ export function scoreDumplings(numDumplings: number): number {
 }
 
 /**
+ * Scores a set of Maki Rolls, each assigned to a Player ID.
+ * The player with the most Maki Rolls scores 6 points. If multiple players tie
+ * for the most, they split the 6 points evenly
+ * (ignoring any remainder) and no second place points are awarded.
+ * 
+ * The player with the second most Maki Rolls scores 3 points. If multiple players
+ * tie for second place, they split the points evenly (ignoring any remainder).
+ */
+export function scoreMakiRolls(
+    numMakiRollsByPlayerId: Record<string, number>
+): Record<string, number> {
+    const entries = Object.entries(numMakiRollsByPlayerId);
+    const grouped = _.groupBy(entries, o => o[1]);
+    const ordered = _.orderBy(grouped, o => o[0]);
+    const firstPlace = ordered[0];
+    const secondPlace = ordered.length > 0 ? ordered[1] : [];
+    const hasFirstPlaceTie = firstPlace.length > 1;
+    const firstPlacePoints = Math.trunc(6 / firstPlace.length);
+    const secondPlacePoints = hasFirstPlaceTie ? 0 : Math.trunc(3 / secondPlace.length);
+    const result: Record<string, number> = {};
+
+    for (const playerId in numMakiRollsByPlayerId) {
+        if (numMakiRollsByPlayerId.hasOwnProperty(playerId)) {
+            let points: number;
+
+            if (firstPlace.some(o => o[0] === playerId)) {
+                points = firstPlacePoints;
+            } else if (secondPlace.some(o => o[0] === playerId)) {
+                points = secondPlacePoints;
+            } else {
+                points = 0;
+            }
+
+            result[playerId] = points;
+        }
+    }
+
+    return result;
+}
+
+/**
  * Scores a set of face-up cards.
  * @returns A tuple consisting of the number of points and the number of Maki Rolls.
  */
@@ -119,6 +161,14 @@ export function scoreRound(
             const [numPoints, numMakiRolls] = scoreFaceUpCards(faceUpCards);
             scoreByPlayerId[playerId] = numPoints;
             numMakiRollsByPlayerId[playerId] = numMakiRolls;
+        }
+    }
+
+    const makiRollPointsByPlayerId = scoreMakiRolls(numMakiRollsByPlayerId);
+
+    for (const playerId in makiRollPointsByPlayerId) {
+        if (makiRollPointsByPlayerId.hasOwnProperty(playerId)) {
+            scoreByPlayerId[playerId] += makiRollPointsByPlayerId[playerId];
         }
     }
 
