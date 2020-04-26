@@ -3,6 +3,7 @@ import compression from "compression";
 import errorHandler from "errorhandler";
 import express from "express";
 import mongoose from "mongoose";
+import morgan from "morgan";
 import path from "path";
 import createGame from "./features/create-game";
 import getGame from "./features/get-game";
@@ -12,6 +13,7 @@ import selectCards from "./features/select-cards";
 import stream from "./features/stream";
 
 const app = express();
+app.use(morgan("dev"));
 app.use(compression());
 app.use(bodyParser.json({ strict: false }));
 app.use(errorHandler());
