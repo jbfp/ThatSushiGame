@@ -226,7 +226,7 @@ export function* endRound(game: IGame): Generator<GameEvent> {
 
 export function* endGame(game: IGame): Generator<GameEvent> {
     const sorted = game.players
-        .sort((lhs, rhs) => lhs.numPoints - rhs.numPoints)
+        .sort((lhs, rhs) => rhs.numPoints - lhs.numPoints)
         .map(p => p.id);
 
     game.winner = sorted[0];
