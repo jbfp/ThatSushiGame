@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { GameEvent, GameEventKind } from "../models/events";
 import { Game, readyToEndTurn, selectCards } from "../models/game";
 
@@ -30,7 +31,17 @@ export default function (
             return;
         }
 
-        await game.save();
+        try {
+            await game.save();
+        } catch (e) {
+            if (e instanceof mongoose.Error.VersionError) {
+                res.status(409).end();
+                return;
+            }
+
+            throw e;
+        }
+
         res.send({});
 
         for (const event of events) {
